@@ -1,0 +1,15 @@
+service/ClearService.class
+server/Server.class
+dataaccess/DataAccessException.class
+dataaccess/MemoryDataAccess.class
+service/result/CreateGameResult.class
+dataaccess/DataAccess.class
+service/result/ListGamesResult.class
+service/request/CreateGameRequest.class
+service/request/JoinGameRequest.class
+server/ServerMain.class
+service/result/ErrorResult.class
+service/UserService.class
+service/result/ListGameEntry.class
+service/GameService.class
+service/result/AuthResult.class
