@@ -24,7 +24,10 @@ public class MemoryDataAccess implements DataAccess {
     }
 
     @Override
-    public void createUser(UserData user) {
+    public void createUser(UserData user) throws DataAccessException {
+        if (users.containsKey(user.username())) {
+            throw new DataAccessException("already taken");
+        }
         users.put(user.username(), user);
     }
 
@@ -44,13 +47,16 @@ public class MemoryDataAccess implements DataAccess {
     }
 
     @Override
-    public void deleteAuth(String authToken) {
-        auths.remove(authToken);
+    public void deleteAuth(String authToken) throws DataAccessException {
+        if (auths.remove(authToken) == null) {
+            throw new DataAccessException("unauthorized");
+        }
     }
 
     @Override
     public int createGame(String gameName) {
-        int gameID = nextGameID++;
+        int gameID = nextGameID;
+        nextGameID++;
         games.put(gameID, new GameData(gameID, null, null, gameName, new ChessGame()));
         return gameID;
     }
@@ -66,7 +72,10 @@ public class MemoryDataAccess implements DataAccess {
     }
 
     @Override
-    public void updateGame(GameData game) {
+    public void updateGame(GameData game) throws DataAccessException {
+        if (!games.containsKey(game.gameID())) {
+            throw new DataAccessException("bad request");
+        }
         games.put(game.gameID(), game);
     }
 }
