@@ -2,6 +2,7 @@ package service;
 
 import dataaccess.MemoryDataAccess;
 import model.UserData;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import service.request.CreateGameRequest;
 import service.request.JoinGameRequest;
@@ -9,61 +10,67 @@ import service.result.AuthResult;
 import service.result.CreateGameResult;
 import service.result.ListGamesResult;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 public class GameServiceTests {
-    private AuthResult login(UserService users) throws Exception {
-        return users.register(new UserData("a", "b", "c"));
+    private AuthResult register(UserService userService) throws Exception {
+        return userService.register(new UserData("cody", "pass", "cody@test.com"));
     }
 
     @Test
     public void createGameSuccess() throws Exception {
-        MemoryDataAccess data = new MemoryDataAccess();
-        AuthResult auth = login(new UserService(data));
-        CreateGameResult result = new GameService(data).createGame(auth.authToken(), new CreateGameRequest("game"));
-        assertTrue(result.gameID() > 0);
+        MemoryDataAccess dao = new MemoryDataAccess();
+        UserService userService = new UserService(dao);
+        GameService gameService = new GameService(dao);
+        AuthResult auth = register(userService);
+        CreateGameResult result = gameService.createGame(auth.authToken(), new CreateGameRequest("game"));
+        Assertions.assertTrue(result.gameID() > 0);
     }
 
     @Test
     public void createGameUnauthorized() {
-        GameService service = new GameService(new MemoryDataAccess());
-        assertThrows(ServiceException.class, () -> service.createGame("bad", new CreateGameRequest("game")));
+        GameService gameService = new GameService(new MemoryDataAccess());
+        Exception ex = Assertions.assertThrows(Exception.class,
+                () -> gameService.createGame("bad", new CreateGameRequest("game")));
+        Assertions.assertEquals("Error: unauthorized", ex.getMessage());
     }
 
     @Test
     public void listGamesSuccess() throws Exception {
-        MemoryDataAccess data = new MemoryDataAccess();
-        AuthResult auth = login(new UserService(data));
-        GameService service = new GameService(data);
-        service.createGame(auth.authToken(), new CreateGameRequest("game"));
-        ListGamesResult result = service.listGames(auth.authToken());
-        assertEquals(1, result.games().size());
+        MemoryDataAccess dao = new MemoryDataAccess();
+        UserService userService = new UserService(dao);
+        GameService gameService = new GameService(dao);
+        AuthResult auth = register(userService);
+        gameService.createGame(auth.authToken(), new CreateGameRequest("game"));
+        ListGamesResult result = gameService.listGames(auth.authToken());
+        Assertions.assertEquals(1, result.games().size());
     }
 
     @Test
     public void listGamesUnauthorized() {
-        GameService service = new GameService(new MemoryDataAccess());
-        assertThrows(ServiceException.class, () -> service.listGames("bad"));
+        GameService gameService = new GameService(new MemoryDataAccess());
+        Exception ex = Assertions.assertThrows(Exception.class, () -> gameService.listGames("bad"));
+        Assertions.assertEquals("Error: unauthorized", ex.getMessage());
     }
 
     @Test
     public void joinGameSuccess() throws Exception {
-        MemoryDataAccess data = new MemoryDataAccess();
-        AuthResult auth = login(new UserService(data));
-        GameService service = new GameService(data);
-        CreateGameResult game = service.createGame(auth.authToken(), new CreateGameRequest("game"));
-        assertDoesNotThrow(() -> service.joinGame(auth.authToken(), new JoinGameRequest("WHITE", game.gameID())));
+        MemoryDataAccess dao = new MemoryDataAccess();
+        UserService userService = new UserService(dao);
+        GameService gameService = new GameService(dao);
+        AuthResult auth = register(userService);
+        CreateGameResult game = gameService.createGame(auth.authToken(), new CreateGameRequest("game"));
+        Assertions.assertDoesNotThrow(() -> gameService.joinGame(auth.authToken(), new JoinGameRequest("WHITE", game.gameID())));
     }
 
     @Test
     public void joinGameAlreadyTaken() throws Exception {
-        MemoryDataAccess data = new MemoryDataAccess();
-        UserService users = new UserService(data);
-        AuthResult auth1 = users.register(new UserData("a", "b", "c"));
-        AuthResult auth2 = users.register(new UserData("x", "y", "z"));
-        GameService service = new GameService(data);
-        CreateGameResult game = service.createGame(auth1.authToken(), new CreateGameRequest("game"));
-        service.joinGame(auth1.authToken(), new JoinGameRequest("WHITE", game.gameID()));
-        assertThrows(ServiceException.class, () -> service.joinGame(auth2.authToken(), new JoinGameRequest("WHITE", game.gameID())));
+        MemoryDataAccess dao = new MemoryDataAccess();
+        UserService userService = new UserService(dao);
+        GameService gameService = new GameService(dao);
+        AuthResult auth = register(userService);
+        CreateGameResult game = gameService.createGame(auth.authToken(), new CreateGameRequest("game"));
+        gameService.joinGame(auth.authToken(), new JoinGameRequest("WHITE", game.gameID()));
+        Exception ex = Assertions.assertThrows(Exception.class,
+                () -> gameService.joinGame(auth.authToken(), new JoinGameRequest("WHITE", game.gameID())));
+        Assertions.assertEquals("Error: already taken", ex.getMessage());
     }
 }

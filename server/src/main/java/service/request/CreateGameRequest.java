@@ -1,2 +1,4 @@
 package service.request;
-public record CreateGameRequest(String gameName) {}
+
+public record CreateGameRequest(String gameName) {
+}
