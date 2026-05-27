@@ -14,12 +14,53 @@ public class MySqlDataAccess implements DataAccess {
     }
 
     private void configureDatabase() throws DataAccessException {
-        System.out.println("Configuring database");
+
+        try {
+            String[] createStatements = {
+                    """
+                CREATE TABLE IF NOT EXISTS user (
+                    username VARCHAR(255) NOT NULL,
+                    password VARCHAR(255) NOT NULL,
+                    email VARCHAR(255) NOT NULL,
+                    PRIMARY KEY (username)
+                )
+                """,
+
+                    """
+                CREATE TABLE IF NOT EXISTS auth (
+                    authToken VARCHAR(255) NOT NULL,
+                    username VARCHAR(255) NOT NULL,
+                    PRIMARY KEY (authToken)
+                )
+                """,
+
+                    """
+                CREATE TABLE IF NOT EXISTS game (
+                    gameID INT NOT NULL AUTO_INCREMENT,
+                    whiteUsername VARCHAR(255),
+                    blackUsername VARCHAR(255),
+                    gameName VARCHAR(255) NOT NULL,
+                    game TEXT,
+                    PRIMARY KEY (gameID)
+                )
+                """
+            };
+
+            for (String statement : createStatements) {
+                try (var conn = DatabaseManager.getConnection();
+                     var preparedStatement = conn.prepareStatement(statement)) {
+
+                    preparedStatement.executeUpdate();
+                }
+            }
+
+        } catch (Exception ex) {
+            throw new DataAccessException("Unable to configure database");
+        }
     }
 
     @Override
     public  void clear() throws DataAccessException {
-        int i = 8;
     }
 
     @Override
