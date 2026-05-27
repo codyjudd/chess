@@ -81,12 +81,46 @@ public class MySqlDataAccess implements DataAccess {
 
     @Override
     public void createUser(UserData user) throws DataAccessException {
+        String statement = "INSERT INTO user (username, password, email) VALUES (?, ?, ?)";
 
+        try (var conn = DatabaseManager.getConnection();
+             var preparedStatement = conn.prepareStatement(statement)) {
+
+            preparedStatement.setString(1, user.username());
+            preparedStatement.setString(2, user.password());
+            preparedStatement.setString(3, user.email());
+
+            preparedStatement.executeUpdate();
+
+        } catch (Exception ex) {
+            throw new DataAccessException("Unable to create user");
+        }
     }
 
     @Override
     public UserData getUser(String username) throws DataAccessException {
-        return null;
+        String statement = "SELECT username, password, email FROM user WHERE username = ?";
+
+        try (var conn = DatabaseManager.getConnection();
+             var preparedStatement = conn.prepareStatement(statement)) {
+
+            preparedStatement.setString(1, username);
+
+            try (var resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    return new UserData(
+                            resultSet.getString("username"),
+                            resultSet.getString("password"),
+                            resultSet.getString("email")
+                    );
+                }
+            }
+
+            return null;
+
+        } catch (Exception ex) {
+            throw new DataAccessException("Unable to get user");
+        }
     }
 
     @Override
