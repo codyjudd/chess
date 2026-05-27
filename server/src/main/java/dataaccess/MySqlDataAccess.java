@@ -18,8 +18,8 @@ public class MySqlDataAccess implements DataAccess {
     }
 
     @Override
-    public void clear() throws DataAccessException {
-
+    public  void clear() throws DataAccessException {
+        int i = 8;
     }
 
     @Override
