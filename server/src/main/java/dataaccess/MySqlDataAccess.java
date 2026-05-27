@@ -220,16 +220,103 @@ public class MySqlDataAccess implements DataAccess {
 
     @Override
     public GameData getGame(int gameID) throws DataAccessException {
-        return null;
+
+        String statement = """
+                SELECT gameID, whiteUsername, blackUsername, gameName, game
+                FROM game
+                WHERE gameID = ?
+                """;
+
+        try (var conn = DatabaseManager.getConnection();
+             var preparedStatement = conn.prepareStatement(statement)) {
+
+            preparedStatement.setInt(1, gameID);
+
+            try (var resultSet = preparedStatement.executeQuery()) {
+
+                if (resultSet.next()) {
+
+                    ChessGame chessGame = gson.fromJson(
+                            resultSet.getString("game"),
+                            ChessGame.class
+                    );
+
+                    return new GameData(
+                            resultSet.getInt("gameID"),
+                            resultSet.getString("whiteUsername"),
+                            resultSet.getString("blackUsername"),
+                            resultSet.getString("gameName"),
+                            chessGame
+                    );
+                }
+            }
+
+            return null;
+
+        } catch (Exception ex) {
+            throw new DataAccessException("Unable to get game");
+        }
     }
 
     @Override
     public Collection<GameData> listGames() throws DataAccessException {
-        return new ArrayList<>();
+
+        Collection<GameData> games = new ArrayList<>();
+
+        String statement = """
+                SELECT gameID, whiteUsername, blackUsername, gameName, game
+                FROM game
+                """;
+
+        try (var conn = DatabaseManager.getConnection();
+             var preparedStatement = conn.prepareStatement(statement);
+             var resultSet = preparedStatement.executeQuery()) {
+
+            while (resultSet.next()) {
+
+                ChessGame chessGame = gson.fromJson(
+                        resultSet.getString("game"),
+                        ChessGame.class
+                );
+
+                games.add(new GameData(
+                        resultSet.getInt("gameID"),
+                        resultSet.getString("whiteUsername"),
+                        resultSet.getString("blackUsername"),
+                        resultSet.getString("gameName"),
+                        chessGame
+                ));
+            }
+
+            return games;
+
+        } catch (Exception ex) {
+            throw new DataAccessException("Unable to list games");
+        }
     }
 
     @Override
     public void updateGame(GameData game) throws DataAccessException {
 
+        String statement = """
+                UPDATE game
+                SET whiteUsername = ?, blackUsername = ?, gameName = ?, game = ?
+                WHERE gameID = ?
+                """;
+
+        try (var conn = DatabaseManager.getConnection();
+             var preparedStatement = conn.prepareStatement(statement)) {
+
+            preparedStatement.setString(1, game.whiteUsername());
+            preparedStatement.setString(2, game.blackUsername());
+            preparedStatement.setString(3, game.gameName());
+            preparedStatement.setString(4, gson.toJson(game.game()));
+            preparedStatement.setInt(5, game.gameID());
+
+            preparedStatement.executeUpdate();
+
+        } catch (Exception ex) {
+            throw new DataAccessException("Unable to update game");
+        }
     }
 }
