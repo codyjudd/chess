@@ -1,13 +1,18 @@
 package dataaccess;
 
+import chess.ChessGame;
+import com.google.gson.Gson;
 import model.AuthData;
 import model.GameData;
 import model.UserData;
 
-import java.util.Collection;
+import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collection;
 
 public class MySqlDataAccess implements DataAccess {
+
+    private final Gson gson = new Gson();
 
     public MySqlDataAccess() throws DataAccessException {
         configureDatabase();
@@ -62,18 +67,20 @@ public class MySqlDataAccess implements DataAccess {
     @Override
     public void clear() throws DataAccessException {
         String[] statements = {
-                "DELETE FROM authentication",
-                "DELETE FROM the game",
-                "DELETE FROM the user"
+                "DELETE FROM auth",
+                "DELETE FROM game",
+                "DELETE FROM user"
         };
 
         try {
             for (String statement : statements) {
                 try (var conn = DatabaseManager.getConnection();
                      var preparedStatement = conn.prepareStatement(statement)) {
+
                     preparedStatement.executeUpdate();
                 }
             }
+
         } catch (Exception ex) {
             throw new DataAccessException("Unable to clear database");
         }
@@ -107,6 +114,7 @@ public class MySqlDataAccess implements DataAccess {
             preparedStatement.setString(1, username);
 
             try (var resultSet = preparedStatement.executeQuery()) {
+
                 if (resultSet.next()) {
                     return new UserData(
                             resultSet.getString("username"),
@@ -125,22 +133,89 @@ public class MySqlDataAccess implements DataAccess {
 
     @Override
     public void createAuth(AuthData auth) throws DataAccessException {
+        String statement = "INSERT INTO auth (authToken, username) VALUES (?, ?)";
 
+        try (var conn = DatabaseManager.getConnection();
+             var preparedStatement = conn.prepareStatement(statement)) {
+
+            preparedStatement.setString(1, auth.authToken());
+            preparedStatement.setString(2, auth.username());
+
+            preparedStatement.executeUpdate();
+
+        } catch (Exception ex) {
+            throw new DataAccessException("Unable to create auth");
+        }
     }
 
     @Override
     public AuthData getAuth(String authToken) throws DataAccessException {
-        return null;
+        String statement = "SELECT authToken, username FROM auth WHERE authToken = ?";
+
+        try (var conn = DatabaseManager.getConnection();
+             var preparedStatement = conn.prepareStatement(statement)) {
+
+            preparedStatement.setString(1, authToken);
+
+            try (var resultSet = preparedStatement.executeQuery()) {
+
+                if (resultSet.next()) {
+                    return new AuthData(
+                            resultSet.getString("authToken"),
+                            resultSet.getString("username")
+                    );
+                }
+            }
+
+            return null;
+
+        } catch (Exception ex) {
+            throw new DataAccessException("Unable to get auth");
+        }
     }
 
     @Override
     public void deleteAuth(String authToken) throws DataAccessException {
+        String statement = "DELETE FROM auth WHERE authToken = ?";
 
+        try (var conn = DatabaseManager.getConnection();
+             var preparedStatement = conn.prepareStatement(statement)) {
+
+            preparedStatement.setString(1, authToken);
+
+            preparedStatement.executeUpdate();
+
+        } catch (Exception ex) {
+            throw new DataAccessException("Unable to delete auth");
+        }
     }
 
     @Override
     public int createGame(String gameName) throws DataAccessException {
-        return 0;
+        String statement = "INSERT INTO game (gameName, game) VALUES (?, ?)";
+
+        try (var conn = DatabaseManager.getConnection();
+             var preparedStatement = conn.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS)) {
+
+            ChessGame chessGame = new ChessGame();
+
+            preparedStatement.setString(1, gameName);
+            preparedStatement.setString(2, gson.toJson(chessGame));
+
+            preparedStatement.executeUpdate();
+
+            try (var keys = preparedStatement.getGeneratedKeys()) {
+
+                if (keys.next()) {
+                    return keys.getInt(1);
+                }
+            }
+
+            throw new DataAccessException("Unable to create game");
+
+        } catch (Exception ex) {
+            throw new DataAccessException("Unable to create game");
+        }
     }
 
     @Override
