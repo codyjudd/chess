@@ -2,7 +2,7 @@ package server;
 
 import com.google.gson.Gson;
 import dataaccess.DataAccess;
-import dataaccess.MemoryDataAccess;
+import dataaccess.MySqlDataAccess;
 import io.javalin.Javalin;
 import model.UserData;
 import service.ClearService;
@@ -17,220 +17,145 @@ public class Server {
     private final Javalin javalin;
     private final Gson gson = new Gson();
 
-    private final DataAccess dataAccess = new MemoryDataAccess();
-
-    private final ClearService clearService = new ClearService(dataAccess);
-    private final UserService userService = new UserService(dataAccess);
-    private final GameService gameService = new GameService(dataAccess);
+    private final DataAccess dataAccess;
+    private final ClearService clearService;
+    private final UserService userService;
+    private final GameService gameService;
 
     public Server() {
 
-        javalin = Javalin.create(config -> {
-            config.staticFiles.add("web");
-        });
+        try {
+            dataAccess = new MySqlDataAccess();
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
 
-        // CLEAR
+        clearService = new ClearService(dataAccess);
+        userService = new UserService(dataAccess);
+        gameService = new GameService(dataAccess);
+
+        javalin = Javalin.create(config -> config.staticFiles.add("web"));
+
         javalin.delete("/db", ctx -> {
             try {
                 clearService.clear();
-
                 ctx.status(200);
-                ctx.contentType("application/json");
                 ctx.result("{}");
-
             } catch (Exception ex) {
-
-                ctx.status(500);
-                ctx.json(new ErrorResult("Error: " + ex.getMessage()));
+                handleException(ctx, ex);
             }
         });
 
-        // REGISTER
         javalin.post("/user", ctx -> {
             try {
-
-                UserData request =
-                        gson.fromJson(ctx.body(), UserData.class);
-
+                UserData request = gson.fromJson(ctx.body(), UserData.class);
                 var result = userService.register(request);
 
                 ctx.status(200);
-                ctx.json(result);
+                ctx.result(gson.toJson(result));
 
             } catch (Exception ex) {
-
-                String msg = ex.getMessage();
-
-                if (msg.equals("Error: bad request")) {
-                    ctx.status(400);
-                }
-                else if (msg.equals("Error: already taken")) {
-                    ctx.status(403);
-                }
-                else {
-                    ctx.status(500);
-                }
-
-                ctx.json(new ErrorResult(msg));
+                handleException(ctx, ex);
             }
         });
 
-        // LOGIN
         javalin.post("/session", ctx -> {
             try {
-
-                UserData request =
-                        gson.fromJson(ctx.body(), UserData.class);
-
+                UserData request = gson.fromJson(ctx.body(), UserData.class);
                 var result = userService.login(request);
 
                 ctx.status(200);
-                ctx.json(result);
+                ctx.result(gson.toJson(result));
 
             } catch (Exception ex) {
-
-                String msg = ex.getMessage();
-
-                if (msg.equals("Error: bad request")) {
-                    ctx.status(400);
-                }
-                else if (msg.equals("Error: unauthorized")) {
-                    ctx.status(401);
-                }
-                else {
-                    ctx.status(500);
-                }
-
-                ctx.json(new ErrorResult(msg));
+                handleException(ctx, ex);
             }
         });
 
-        // LOGOUT
         javalin.delete("/session", ctx -> {
             try {
+                String authToken = ctx.header("authorization");
 
-                String auth =
-                        ctx.header("authorization");
-
-                userService.logout(auth);
+                userService.logout(authToken);
 
                 ctx.status(200);
-                ctx.contentType("application/json");
                 ctx.result("{}");
 
             } catch (Exception ex) {
-
-                String msg = ex.getMessage();
-
-                if (msg.equals("Error: unauthorized")) {
-                    ctx.status(401);
-                }
-                else {
-                    ctx.status(500);
-                }
-
-                ctx.json(new ErrorResult(msg));
+                handleException(ctx, ex);
             }
         });
 
-        // LIST GAMES
-        javalin.get("/game", ctx -> {
-            try {
-
-                String auth =
-                        ctx.header("authorization");
-
-                var result =
-                        gameService.listGames(auth);
-
-                ctx.status(200);
-                ctx.json(result);
-
-            } catch (Exception ex) {
-
-                String msg = ex.getMessage();
-
-                if (msg.equals("Error: unauthorized")) {
-                    ctx.status(401);
-                }
-                else {
-                    ctx.status(500);
-                }
-
-                ctx.json(new ErrorResult(msg));
-            }
-        });
-
-        // CREATE GAME
         javalin.post("/game", ctx -> {
             try {
 
-                String auth =
-                        ctx.header("authorization");
+                String authToken = ctx.header("authorization");
 
                 CreateGameRequest request =
                         gson.fromJson(ctx.body(), CreateGameRequest.class);
 
-                var result =
-                        gameService.createGame(auth, request);
+                var result = gameService.createGame(authToken, request);
 
                 ctx.status(200);
-                ctx.json(result);
+                ctx.result(gson.toJson(result));
 
             } catch (Exception ex) {
-
-                String msg = ex.getMessage();
-
-                if (msg.equals("Error: bad request")) {
-                    ctx.status(400);
-                }
-                else if (msg.equals("Error: unauthorized")) {
-                    ctx.status(401);
-                }
-                else {
-                    ctx.status(500);
-                }
-
-                ctx.json(new ErrorResult(msg));
+                handleException(ctx, ex);
             }
         });
 
-        // JOIN GAME
+        javalin.get("/game", ctx -> {
+            try {
+
+                String authToken = ctx.header("authorization");
+
+                var result = gameService.listGames(authToken);
+
+                ctx.status(200);
+                ctx.result(gson.toJson(result));
+
+            } catch (Exception ex) {
+                handleException(ctx, ex);
+            }
+        });
+
         javalin.put("/game", ctx -> {
             try {
 
-                String auth =
-                        ctx.header("authorization");
+                String authToken = ctx.header("authorization");
 
                 JoinGameRequest request =
                         gson.fromJson(ctx.body(), JoinGameRequest.class);
 
-                gameService.joinGame(auth, request);
+                gameService.joinGame(authToken, request);
 
                 ctx.status(200);
-                ctx.contentType("application/json");
                 ctx.result("{}");
 
             } catch (Exception ex) {
-
-                String msg = ex.getMessage();
-
-                if (msg.equals("Error: bad request")) {
-                    ctx.status(400);
-                }
-                else if (msg.equals("Error: unauthorized")) {
-                    ctx.status(401);
-                }
-                else if (msg.equals("Error: already taken")) {
-                    ctx.status(403);
-                }
-                else {
-                    ctx.status(500);
-                }
-
-                ctx.json(new ErrorResult(msg));
+                handleException(ctx, ex);
             }
         });
+    }
+
+    private void handleException(io.javalin.http.Context ctx, Exception ex) {
+
+        String message = ex.getMessage();
+
+        if ("Error: bad request".equals(message)) {
+            ctx.status(400);
+
+        } else if ("Error: unauthorized".equals(message)) {
+            ctx.status(401);
+
+        } else if ("Error: already taken".equals(message)) {
+            ctx.status(403);
+
+        } else {
+            ctx.status(500);
+        }
+
+        ctx.result(gson.toJson(new ErrorResult(message)));
     }
 
     public int run(int desiredPort) {
