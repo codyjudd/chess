@@ -25,6 +25,27 @@ public class DatabaseManager {
         }
     }
 
+    // In DatabaseManager.java, add:
+    public static void createDatabase() throws DataAccessException {
+        try {
+            Properties properties = loadProperties();
+            String url = properties.getProperty("connection.url");
+            // Connect without specifying the DB name
+            String baseUrl = url.substring(0, url.lastIndexOf("/"));
+            String dbName = url.substring(url.lastIndexOf("/") + 1);
+            String user = properties.getProperty("connection.user");
+            String password = properties.getProperty("connection.password");
+
+            try (Connection conn = DriverManager.getConnection(baseUrl, user, password);
+                 PreparedStatement ps = conn.prepareStatement(
+                         "CREATE DATABASE IF NOT EXISTS `" + dbName + "`")) {
+                ps.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Unable to create database");
+        }
+    }
+
     public static Connection getConnection() throws DataAccessException {
         try {
             Properties properties = loadProperties();
