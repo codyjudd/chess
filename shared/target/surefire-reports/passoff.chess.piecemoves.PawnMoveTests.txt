@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: passoff.chess.piecemoves.PawnMoveTests
--------------------------------------------------------------------------------
-Tests run: 23, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in passoff.chess.piecemoves.PawnMoveTests
