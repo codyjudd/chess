@@ -3,11 +3,13 @@ package service;
 import dataaccess.DataAccess;
 import model.AuthData;
 import model.UserData;
+import org.mindrot.jbcrypt.BCrypt;
 import service.result.AuthResult;
 
 import java.util.UUID;
 
 public class UserService {
+
     private final DataAccess dataAccess;
 
     public UserService(DataAccess dataAccess) {
@@ -15,7 +17,12 @@ public class UserService {
     }
 
     public AuthResult register(UserData user) throws Exception {
-        if (user == null || user.username() == null || user.password() == null || user.email() == null) {
+
+        if (user == null ||
+                user.username() == null ||
+                user.password() == null ||
+                user.email() == null) {
+
             throw new Exception("Error: bad request");
         }
 
@@ -23,33 +30,59 @@ public class UserService {
             throw new Exception("Error: already taken");
         }
 
-        dataAccess.createUser(user);
+        String hashedPassword =
+                BCrypt.hashpw(user.password(), BCrypt.gensalt());
 
-        String token = UUID.randomUUID().toString();
-        dataAccess.createAuth(new AuthData(token, user.username()));
+        UserData hashedUser =
+                new UserData(user.username(), hashedPassword, user.email());
 
-        return new AuthResult(user.username(), token);
+        dataAccess.createUser(hashedUser);
+
+        String authToken = UUID.randomUUID().toString();
+
+        dataAccess.createAuth(
+                new AuthData(authToken, user.username())
+        );
+
+        return new AuthResult(user.username(), authToken);
     }
 
     public AuthResult login(UserData user) throws Exception {
-        if (user == null || user.username() == null || user.password() == null) {
+
+        if (user == null ||
+                user.username() == null ||
+                user.password() == null) {
+
             throw new Exception("Error: bad request");
         }
 
-        UserData existingUser = dataAccess.getUser(user.username());
+        UserData storedUser =
+                dataAccess.getUser(user.username());
 
-        if (existingUser == null || !existingUser.password().equals(user.password())) {
+        if (storedUser == null) {
             throw new Exception("Error: unauthorized");
         }
 
-        String token = UUID.randomUUID().toString();
-        dataAccess.createAuth(new AuthData(token, user.username()));
+        if (!BCrypt.checkpw(user.password(), storedUser.password())) {
+            throw new Exception("Error: unauthorized");
+        }
 
-        return new AuthResult(user.username(), token);
+        String authToken = UUID.randomUUID().toString();
+
+        dataAccess.createAuth(
+                new AuthData(authToken, user.username())
+        );
+
+        return new AuthResult(user.username(), authToken);
     }
 
     public void logout(String authToken) throws Exception {
-        if (authToken == null || dataAccess.getAuth(authToken) == null) {
+
+        if (authToken == null) {
+            throw new Exception("Error: unauthorized");
+        }
+
+        if (dataAccess.getAuth(authToken) == null) {
             throw new Exception("Error: unauthorized");
         }
 
