@@ -19,6 +19,7 @@ public class MySqlDataAccess implements DataAccess {
     }
 
     private void configureDatabase() throws DataAccessException {
+        DatabaseManager.createDatabase();
 
         try (Connection conn = DatabaseManager.getConnection()) {
 

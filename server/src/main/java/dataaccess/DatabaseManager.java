@@ -1,63 +1,58 @@
 package dataaccess;
 
-import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.sql.*;
 import java.util.Properties;
 
 public class DatabaseManager {
+    private static String databaseName;
+    private static String dbUsername;
+    private static String dbPassword;
+    private static String connectionUrl;
 
-    private static final String DB_PROPERTIES = "db.properties";
-
-    private static Properties loadProperties() throws DataAccessException {
-        try (InputStream input = DatabaseManager.class.getClassLoader().getResourceAsStream(DB_PROPERTIES)) {
-
-            if (input == null) {
-                throw new FileNotFoundException("Unable to find " + DB_PROPERTIES);
-            }
-
-            Properties properties = new Properties();
-            properties.load(input);
-            return properties;
-
-        } catch (Exception e) {
-            throw new DataAccessException("Unable to load database properties");
-        }
+    static {
+        loadPropertiesFromResources();
     }
 
-    // In DatabaseManager.java, add:
     public static void createDatabase() throws DataAccessException {
-        try {
-            Properties properties = loadProperties();
-            String url = properties.getProperty("connection.url");
-            // Connect without specifying the DB name
-            String baseUrl = url.substring(0, url.lastIndexOf("/"));
-            String dbName = url.substring(url.lastIndexOf("/") + 1);
-            String user = properties.getProperty("connection.user");
-            String password = properties.getProperty("connection.password");
-
-            try (Connection conn = DriverManager.getConnection(baseUrl, user, password);
-                 PreparedStatement ps = conn.prepareStatement(
-                         "CREATE DATABASE IF NOT EXISTS `" + dbName + "`")) {
-                ps.executeUpdate();
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException("Unable to create database");
+        var statement = "CREATE DATABASE IF NOT EXISTS " + databaseName;
+        try (var conn = DriverManager.getConnection(connectionUrl, dbUsername, dbPassword);
+             var preparedStatement = conn.prepareStatement(statement)) {
+            preparedStatement.executeUpdate();
+        } catch (SQLException ex) {
+            throw new DataAccessException("failed to create database", ex);
         }
     }
 
-    public static Connection getConnection() throws DataAccessException {
+    static Connection getConnection() throws DataAccessException {
         try {
-            Properties properties = loadProperties();
-
-            String url = properties.getProperty("connection.url");
-            String user = properties.getProperty("connection.user");
-            String password = properties.getProperty("connection.password");
-
-            return DriverManager.getConnection(url, user, password);
-
-        } catch (SQLException e) {
-            throw new DataAccessException("Unable to connect to database");
+            var conn = DriverManager.getConnection(connectionUrl, dbUsername, dbPassword);
+            conn.setCatalog(databaseName);
+            return conn;
+        } catch (SQLException ex) {
+            throw new DataAccessException("failed to get connection", ex);
         }
+    }
+
+    private static void loadPropertiesFromResources() {
+        try (var propStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("db.properties")) {
+            if (propStream == null) {
+                throw new Exception("Unable to load db.properties");
+            }
+            Properties props = new Properties();
+            props.load(propStream);
+            loadProperties(props);
+        } catch (Exception ex) {
+            throw new RuntimeException("unable to process db.properties", ex);
+        }
+    }
+
+    private static void loadProperties(Properties props) {
+        databaseName = props.getProperty("db.name");
+        dbUsername = props.getProperty("db.user");
+        dbPassword = props.getProperty("db.password");
+
+        var host = props.getProperty("db.host");
+        var port = Integer.parseInt(props.getProperty("db.port"));
+        connectionUrl = String.format("jdbc:mysql://%s:%d", host, port);
     }
 }
