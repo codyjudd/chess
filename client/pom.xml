@@ -37,9 +37,7 @@
                         <configuration>
                             <archive>
                                 <manifest>
-                                    <mainClass>
-                                        client.ClientMain
-                                    </mainClass>
+                                    <mainClass>client.ClientMain</mainClass>
                                 </manifest>
                             </archive>
                             <descriptors>
@@ -61,8 +59,8 @@
         <dependency>
             <groupId>edu.byu.cs240</groupId>
             <artifactId>server</artifactId>
-            <scope>test</scope>
             <version>1.0.0</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.glassfish.tyrus.bundles</groupId>

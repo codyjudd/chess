@@ -21,7 +21,7 @@ public class BoardDrawer {
     private static final String BORDER_BG   = SET_BG_COLOR_DARK_GREY;
     private static final String BORDER_TEXT = SET_TEXT_COLOR_WHITE + SET_TEXT_BOLD;
     private static final String LIGHT_SQ    = SET_BG_COLOR_LIGHT_GREY;
-    private static final String DARK_SQ     = SET_BG_COLOR_DARK_GREEN;
+    private static final String DARK_SQ     = SET_BG_COLOR_GREEN ;
     private static final String WHITE_PIECE = SET_TEXT_COLOR_RED   + SET_TEXT_BOLD;
     private static final String BLACK_PIECE = SET_TEXT_COLOR_BLUE  + SET_TEXT_BOLD;
     private static final String RESET       = RESET_BG_COLOR + RESET_TEXT_COLOR + RESET_TEXT_BOLD_FAINT;
