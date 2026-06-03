@@ -4,10 +4,7 @@ import com.google.gson.Gson;
 import exception.ResponseException;
 import model.AuthData;
 import model.GameData;
-import service.request.CreateGameRequest;
-import service.request.JoinGameRequest;
-import service.result.CreateGameResult;
-import service.result.ListGamesResult;
+
 
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -222,3 +219,11 @@ public class ServerFacade {
     private record LoginRequest(String username, String password) {
     }
 }
+
+record CreateGameRequest(String gameName) {}
+
+record JoinGameRequest(String playerColor, int gameID) {}
+
+record CreateGameResult(int gameID) {}
+
+record ListGamesResult(java.util.Collection<model.GameData> games) {}
