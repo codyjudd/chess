@@ -3,13 +3,16 @@ package server;
 import com.google.gson.Gson;
 import exception.ResponseException;
 import model.AuthData;
+import model.GameData;
 import service.request.CreateGameRequest;
 import service.result.CreateGameResult;
+import service.result.ListGamesResult;
 
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.util.Collection;
 
 public class ServerFacade {
 
@@ -20,35 +23,27 @@ public class ServerFacade {
         serverUrl = "http://localhost:" + port;
     }
 
-    public int createGame(String authToken, String gameName)
+    public Collection<GameData> listGames(String authToken)
             throws ResponseException {
         try {
             var url = URI.create(serverUrl + "/game").toURL();
             HttpURLConnection http = (HttpURLConnection) url.openConnection();
 
-            http.setRequestMethod("POST");
-            http.setDoOutput(true);
-            http.addRequestProperty("Content-Type", "application/json");
+            http.setRequestMethod("GET");
             http.addRequestProperty("authorization", authToken);
-
-            var request = new CreateGameRequest(gameName);
-
-            try (OutputStream output = http.getOutputStream()) {
-                output.write(gson.toJson(request).getBytes());
-            }
 
             http.connect();
 
             if (http.getResponseCode() != 200) {
-                throw new ResponseException("Create game failed");
+                throw new ResponseException("List games failed");
             }
 
             try (InputStreamReader reader =
                          new InputStreamReader(http.getInputStream())) {
-                CreateGameResult result =
-                        gson.fromJson(reader, CreateGameResult.class);
+                ListGamesResult result =
+                        gson.fromJson(reader, ListGamesResult.class);
 
-                return result.gameID();
+                return result.games();
             }
 
         } catch (Exception e) {
