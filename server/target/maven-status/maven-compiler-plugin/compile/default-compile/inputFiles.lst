@@ -3,7 +3,9 @@
 /Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/server/src/main/java/dataaccess/DatabaseManager.java
 /Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/server/src/main/java/dataaccess/MemoryDataAccess.java
 /Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/server/src/main/java/dataaccess/MySqlDataAccess.java
+/Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/server/src/main/java/exception/ResponseException.java
 /Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/server/src/main/java/server/Server.java
+/Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/server/src/main/java/server/ServerFacade.java
 /Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/server/src/main/java/server/ServerMain.java
 /Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/server/src/main/java/service/ClearService.java
 /Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/server/src/main/java/service/GameService.java
@@ -17,3 +19,8 @@
 /Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/server/src/main/java/service/result/ErrorResult.java
 /Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/server/src/main/java/service/result/ListGameEntry.java
 /Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/server/src/main/java/service/result/ListGamesResult.java
+/Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/server/src/main/java/ui/BoardDrawer.java
+/Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/server/src/main/java/ui/ChessClient.java
+/Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/server/src/main/java/ui/EscapeSequences.java
+/Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/server/src/main/java/ui/PostloginRepl.java
+/Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/server/src/main/java/ui/PreloginRepl.java

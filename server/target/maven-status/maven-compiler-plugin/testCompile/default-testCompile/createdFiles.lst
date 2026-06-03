@@ -1,4 +1,7 @@
+passoff/server/DatabaseTests.class
+service/ClearServiceTests.class
+dataaccess/MySqlDataAccessTests.class
+passoff/server/DatabaseTests$TableAction.class
 passoff/server/StandardAPITests.class
 service/UserServiceTests.class
-service/ClearServiceTests.class
 service/GameServiceTests.class
