@@ -12,7 +12,6 @@ import java.net.URI;
 import java.util.Collection;
 
 public class ServerFacade {
-
     private final String serverUrl;
     private final Gson gson = new Gson();
 
@@ -21,171 +20,90 @@ public class ServerFacade {
     }
 
     public void clear() throws ResponseException {
-        try {
-            var url = URI.create(serverUrl + "/db").toURL();
-            HttpURLConnection http = (HttpURLConnection) url.openConnection();
-            http.setRequestMethod("DELETE");
-            http.connect();
-
-            if (http.getResponseCode() != 200) {
-                throw new ResponseException("Unable to clear database");
-            }
-        } catch (Exception e) {
-            throw new ResponseException("Connection error");
-        }
+        makeRequest("DELETE", "/db", null, null, null);
     }
 
     public AuthData register(String username, String password, String email) throws ResponseException {
-        try {
-            var url = URI.create(serverUrl + "/user").toURL();
-            HttpURLConnection http = (HttpURLConnection) url.openConnection();
-
-            http.setRequestMethod("POST");
-            http.setDoOutput(true);
-            http.addRequestProperty("Content-Type", "application/json");
-
-            var request = new RegisterRequest(username, password, email);
-
-            try (OutputStream output = http.getOutputStream()) {
-                output.write(gson.toJson(request).getBytes());
-            }
-
-            http.connect();
-
-            if (http.getResponseCode() != 200) {
-                throw new ResponseException("Register failed");
-            }
-
-            try (InputStreamReader reader = new InputStreamReader(http.getInputStream())) {
-                return gson.fromJson(reader, AuthData.class);
-            }
-        } catch (Exception e) {
-            throw new ResponseException("Connection error");
-        }
+        return makeRequest("POST", "/user", null,
+                new RegisterRequest(username, password, email), AuthData.class);
     }
 
     public AuthData login(String username, String password) throws ResponseException {
-        try {
-            var url = URI.create(serverUrl + "/session").toURL();
-            HttpURLConnection http = (HttpURLConnection) url.openConnection();
-
-            http.setRequestMethod("POST");
-            http.setDoOutput(true);
-            http.addRequestProperty("Content-Type", "application/json");
-
-            var request = new LoginRequest(username, password);
-
-            try (OutputStream output = http.getOutputStream()) {
-                output.write(gson.toJson(request).getBytes());
-            }
-
-            http.connect();
-
-            if (http.getResponseCode() != 200) {
-                throw new ResponseException("Login failed");
-            }
-
-            try (InputStreamReader reader = new InputStreamReader(http.getInputStream())) {
-                return gson.fromJson(reader, AuthData.class);
-            }
-        } catch (Exception e) {
-            throw new ResponseException("Connection error");
-        }
+        return makeRequest("POST", "/session", null,
+                new LoginRequest(username, password), AuthData.class);
     }
 
     public void logout(String authToken) throws ResponseException {
-        try {
-            var url = URI.create(serverUrl + "/session").toURL();
-            HttpURLConnection http = (HttpURLConnection) url.openConnection();
-
-            http.setRequestMethod("DELETE");
-            http.addRequestProperty("authorization", authToken);
-            http.connect();
-
-            if (http.getResponseCode() != 200) {
-                throw new ResponseException("Logout failed");
-            }
-        } catch (Exception e) {
-            throw new ResponseException("Connection error");
-        }
+        makeRequest("DELETE", "/session", authToken, null, null);
     }
 
     public int createGame(String authToken, String gameName) throws ResponseException {
-        try {
-            var url = URI.create(serverUrl + "/game").toURL();
-            HttpURLConnection http = (HttpURLConnection) url.openConnection();
-
-            http.setRequestMethod("POST");
-            http.setDoOutput(true);
-            http.addRequestProperty("Content-Type", "application/json");
-            http.addRequestProperty("authorization", authToken);
-
-            var request = new CreateGameRequest(gameName);
-
-            try (OutputStream output = http.getOutputStream()) {
-                output.write(gson.toJson(request).getBytes());
-            }
-
-            http.connect();
-
-            if (http.getResponseCode() != 200) {
-                throw new ResponseException("Create game failed");
-            }
-
-            try (InputStreamReader reader = new InputStreamReader(http.getInputStream())) {
-                CreateGameResult result = gson.fromJson(reader, CreateGameResult.class);
-                return result.gameID();
-            }
-        } catch (Exception e) {
-            throw new ResponseException("Connection error");
-        }
+        CreateGameResult result = makeRequest("POST", "/game", authToken,
+                new CreateGameRequest(gameName), CreateGameResult.class);
+        return result.gameID();
     }
 
     public Collection<GameData> listGames(String authToken) throws ResponseException {
-        try {
-            var url = URI.create(serverUrl + "/game").toURL();
-            HttpURLConnection http = (HttpURLConnection) url.openConnection();
+        ListGamesResult result = makeRequest("GET", "/game", authToken, null, ListGamesResult.class);
+        return result.games();
+    }
 
-            http.setRequestMethod("GET");
-            http.addRequestProperty("authorization", authToken);
+    public void joinGame(String authToken, String playerColor, int gameID) throws ResponseException {
+        makeRequest("PUT", "/game", authToken,
+                new JoinGameRequest(playerColor, gameID), null);
+    }
+
+    private <T> T makeRequest(String method, String path, String authToken,
+                              Object body, Class<T> responseClass) throws ResponseException {
+        try {
+            HttpURLConnection http = createConnection(method, path, authToken);
+
+            if (body != null) {
+                writeBody(http, body);
+            }
+
             http.connect();
 
             if (http.getResponseCode() != 200) {
-                throw new ResponseException("List games failed");
+                throw new ResponseException("Request failed");
+            }
+
+            if (responseClass == null) {
+                return null;
             }
 
             try (InputStreamReader reader = new InputStreamReader(http.getInputStream())) {
-                ListGamesResult result = gson.fromJson(reader, ListGamesResult.class);
-                return result.games();
+                return gson.fromJson(reader, responseClass);
             }
+
+        } catch (ResponseException e) {
+            throw e;
         } catch (Exception e) {
             throw new ResponseException("Connection error");
         }
     }
 
-    public void joinGame(String authToken, String playerColor, int gameID) throws ResponseException {
-        try {
-            var url = URI.create(serverUrl + "/game").toURL();
-            HttpURLConnection http = (HttpURLConnection) url.openConnection();
+    private HttpURLConnection createConnection(String method, String path, String authToken) throws Exception {
+        var url = URI.create(serverUrl + path).toURL();
+        HttpURLConnection http = (HttpURLConnection) url.openConnection();
 
-            http.setRequestMethod("PUT");
-            http.setDoOutput(true);
-            http.addRequestProperty("Content-Type", "application/json");
+        http.setRequestMethod(method);
+        http.addRequestProperty("Content-Type", "application/json");
+
+        if (authToken != null) {
             http.addRequestProperty("authorization", authToken);
+        }
 
-            var request = new JoinGameRequest(playerColor, gameID);
+        if (method.equals("POST") || method.equals("PUT")) {
+            http.setDoOutput(true);
+        }
 
-            try (OutputStream output = http.getOutputStream()) {
-                output.write(gson.toJson(request).getBytes());
-            }
+        return http;
+    }
 
-            http.connect();
-
-            if (http.getResponseCode() != 200) {
-                throw new ResponseException("Join game failed");
-            }
-        } catch (Exception e) {
-            throw new ResponseException("Connection error");
+    private void writeBody(HttpURLConnection http, Object body) throws Exception {
+        try (OutputStream output = http.getOutputStream()) {
+            output.write(gson.toJson(body).getBytes());
         }
     }
 
