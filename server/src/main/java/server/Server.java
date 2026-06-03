@@ -14,21 +14,18 @@ import service.request.JoinGameRequest;
 import service.result.ErrorResult;
 
 public class Server {
-
-    private final Javalin javalin;
     private final Gson gson = new Gson();
-
+    private final DataAccess dataAccess;
     private final ClearService clearService;
     private final UserService userService;
     private final GameService gameService;
+    private final Javalin javalin;
 
     public Server() {
-        DataAccess dataAccess = createDataAccess();
-
+        dataAccess = createDataAccess();
         clearService = new ClearService(dataAccess);
         userService = new UserService(dataAccess);
         gameService = new GameService(dataAccess);
-
         javalin = Javalin.create(config -> config.staticFiles.add("web"));
         registerRoutes();
     }
@@ -42,7 +39,7 @@ public class Server {
     }
 
     private void registerRoutes() {
-        javalin.delete("/db", this::clearDatabase);
+        javalin.delete("/db", this::clear);
         javalin.post("/user", this::register);
         javalin.post("/session", this::login);
         javalin.delete("/session", this::logout);
@@ -51,7 +48,7 @@ public class Server {
         javalin.put("/game", this::joinGame);
     }
 
-    private void clearDatabase(Context ctx) {
+    private void clear(Context ctx) {
         try {
             clearService.clear();
             sendEmptySuccess(ctx);
@@ -63,7 +60,7 @@ public class Server {
     private void register(Context ctx) {
         try {
             UserData request = gson.fromJson(ctx.body(), UserData.class);
-            sendJson(ctx, userService.register(request));
+            sendSuccess(ctx, userService.register(request));
         } catch (Exception ex) {
             handleException(ctx, ex);
         }
@@ -72,7 +69,7 @@ public class Server {
     private void login(Context ctx) {
         try {
             UserData request = gson.fromJson(ctx.body(), UserData.class);
-            sendJson(ctx, userService.login(request));
+            sendSuccess(ctx, userService.login(request));
         } catch (Exception ex) {
             handleException(ctx, ex);
         }
@@ -80,7 +77,7 @@ public class Server {
 
     private void logout(Context ctx) {
         try {
-            userService.logout(ctx.header("authorization"));
+            userService.logout(getAuthToken(ctx));
             sendEmptySuccess(ctx);
         } catch (Exception ex) {
             handleException(ctx, ex);
@@ -90,7 +87,7 @@ public class Server {
     private void createGame(Context ctx) {
         try {
             CreateGameRequest request = gson.fromJson(ctx.body(), CreateGameRequest.class);
-            sendJson(ctx, gameService.createGame(ctx.header("authorization"), request));
+            sendSuccess(ctx, gameService.createGame(getAuthToken(ctx), request));
         } catch (Exception ex) {
             handleException(ctx, ex);
         }
@@ -98,7 +95,7 @@ public class Server {
 
     private void listGames(Context ctx) {
         try {
-            sendJson(ctx, gameService.listGames(ctx.header("authorization")));
+            sendSuccess(ctx, gameService.listGames(getAuthToken(ctx)));
         } catch (Exception ex) {
             handleException(ctx, ex);
         }
@@ -107,14 +104,18 @@ public class Server {
     private void joinGame(Context ctx) {
         try {
             JoinGameRequest request = gson.fromJson(ctx.body(), JoinGameRequest.class);
-            gameService.joinGame(ctx.header("authorization"), request);
+            gameService.joinGame(getAuthToken(ctx), request);
             sendEmptySuccess(ctx);
         } catch (Exception ex) {
             handleException(ctx, ex);
         }
     }
 
-    private void sendJson(Context ctx, Object result) {
+    private String getAuthToken(Context ctx) {
+        return ctx.header("authorization");
+    }
+
+    private void sendSuccess(Context ctx, Object result) {
         ctx.status(200);
         ctx.result(gson.toJson(result));
     }
@@ -126,18 +127,21 @@ public class Server {
 
     private void handleException(Context ctx, Exception ex) {
         String message = ex.getMessage();
-
-        if ("Error: bad request".equals(message)) {
-            ctx.status(400);
-        } else if ("Error: unauthorized".equals(message)) {
-            ctx.status(401);
-        } else if ("Error: already taken".equals(message)) {
-            ctx.status(403);
-        } else {
-            ctx.status(500);
-        }
-
+        ctx.status(statusCode(message));
         ctx.result(gson.toJson(new ErrorResult(message)));
+    }
+
+    private int statusCode(String message) {
+        if ("Error: bad request".equals(message)) {
+            return 400;
+        }
+        if ("Error: unauthorized".equals(message)) {
+            return 401;
+        }
+        if ("Error: already taken".equals(message)) {
+            return 403;
+        }
+        return 500;
     }
 
     public int run(int desiredPort) {

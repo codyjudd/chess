@@ -46,10 +46,6 @@ public class DatabaseManager {
         }
     }
 
-    private void test () {
-        int i = 1;
-    }
-
     private static void loadProperties(Properties props) {
         databaseName = props.getProperty("db.name");
         dbUsername = props.getProperty("db.user");
