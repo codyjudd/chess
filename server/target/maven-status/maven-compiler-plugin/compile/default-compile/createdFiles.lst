@@ -21,9 +21,13 @@ exception/ResponseException.class
 dataaccess/DataAccessException.class
 dataaccess/MemoryDataAccess.class
 service/result/CreateGameResult.class
+server/JoinGameRequest.class
 service/ServiceException.class
+server/CreateGameResult.class
 server/ServerFacade$RegisterRequest.class
+server/CreateGameRequest.class
 service/UserService.class
+server/ListGamesResult.class
 service/GameService.class
 dataaccess/DatabaseManager.class
 service/result/AuthResult.class
