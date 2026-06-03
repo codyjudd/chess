@@ -6,38 +6,26 @@ import exception.ResponseException;
 import model.AuthData;
 import model.GameData;
 import server.ServerFacade;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-/**
- * Processes user commands and calls ServerFacade.
- * Place at: server/src/main/java/ui/ChessClient.java
- */
+
 public class ChessClient {
 
     private final ServerFacade facade;
-
-    // State
     private AuthData currentUser = null;
-
-    // Keeps track of the last listed games so users can refer to them by number
     private List<GameData> lastGameList = new ArrayList<>();
-
     public ChessClient(int port) {
         this.facade = new ServerFacade(port);
     }
-
     public boolean isLoggedIn() {
         return currentUser != null;
     }
-
     public String currentUsername() {
         return currentUser != null ? currentUser.username() : null;
     }
 
-    // Pre-login commands
 
     public String register(String[] args) {
         if (args.length != 3) {
@@ -62,7 +50,7 @@ public class ChessClient {
             return "Login failed: " + e.getMessage();
         }
     }
-    // Post-login commands
+    // Some Post login commands
     public String logout() {
         try {
             facade.logout(currentUser.authToken());
@@ -160,10 +148,7 @@ public class ChessClient {
         return "";
     }
 
-    // Internal helpers
 
-
-    /** Returns 0-based index, or -1 on bad input. */
     private int parseGameIndex(String s) {
         try {
             int n = Integer.parseInt(s);
