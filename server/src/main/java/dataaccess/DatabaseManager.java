@@ -40,14 +40,19 @@ public class DatabaseManager {
             }
             Properties props = new Properties();
             props.load(propStream);
-            databaseName = props.getProperty("db.name");
-            dbUsername = props.getProperty("db.user");
-            dbPassword = props.getProperty("db.password");
-            var host = props.getProperty("db.host");
-            var port = Integer.parseInt(props.getProperty("db.port"));
-            connectionUrl = String.format("jdbc:mysql://%s:%d", host, port);
+            loadProperties(props);
         } catch (Exception ex) {
             throw new RuntimeException("unable to process db.properties", ex);
         }
+    }
+
+    private static void loadProperties(Properties props) {
+        databaseName = props.getProperty("db.name");
+        dbUsername = props.getProperty("db.user");
+        dbPassword = props.getProperty("db.password");
+
+        var host = props.getProperty("db.host");
+        var port = Integer.parseInt(props.getProperty("db.port"));
+        connectionUrl = String.format("jdbc:mysql://%s:%d", host, port);
     }
 }
