@@ -7,3 +7,9 @@
 /Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/shared/src/main/java/model/AuthData.java
 /Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/shared/src/main/java/model/GameData.java
 /Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/shared/src/main/java/model/UserData.java
+/Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/shared/src/main/java/websocket/commands/MakeMoveCommand.java
+/Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/shared/src/main/java/websocket/commands/UserGameCommand.java
+/Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/shared/src/main/java/websocket/messages/ErrorMessage.java
+/Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/shared/src/main/java/websocket/messages/LoadGameMessage.java
+/Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/shared/src/main/java/websocket/messages/NotificationMessage.java
+/Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/shared/src/main/java/websocket/messages/ServerMessage.java

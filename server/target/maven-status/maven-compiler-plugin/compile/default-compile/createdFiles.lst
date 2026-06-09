@@ -12,10 +12,12 @@ service/result/ErrorResult.class
 service/result/ListGameEntry.class
 service/ClearService.class
 exception/ResponseException.class
+websocket/ConnectionManager.class
 dataaccess/DataAccessException.class
 dataaccess/MemoryDataAccess.class
 service/result/CreateGameResult.class
 server/JoinGameRequest.class
+websocket/WebSocketHandler.class
 service/ServiceException.class
 server/CreateGameResult.class
 server/ServerFacade$RegisterRequest.class

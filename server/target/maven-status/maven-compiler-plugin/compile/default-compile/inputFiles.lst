@@ -19,3 +19,5 @@
 /Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/server/src/main/java/service/result/ErrorResult.java
 /Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/server/src/main/java/service/result/ListGameEntry.java
 /Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/server/src/main/java/service/result/ListGamesResult.java
+/Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/server/src/main/java/websocket/ConnectionManager.java
+/Users/codyjudd/IdeaProjects/Chess Game WORKING BACKUP copy/server/src/main/java/websocket/WebSocketHandler.java
