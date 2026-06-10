@@ -23,6 +23,16 @@ public class ConnectionManager {
     }
 
     public void broadcast(int gameID, String message) throws Exception {
-        // TODO
+
+        if (!connections.containsKey(gameID)) {
+            return;
+        }
+
+        for (Session session : connections.get(gameID)) {
+
+            if (session.isOpen()) {
+                session.getRemote().sendString(message);
+            }
+        }
     }
 }

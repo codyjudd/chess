@@ -26,18 +26,18 @@ public class WebSocketHandler {
     }
 
     private void connect(UserGameCommand command) {
-        // TODO
+        System.out.println("CONNECT received");
     }
 
     private void makeMove(UserGameCommand command) {
-        // TODO
+        System.out.println("MAKE_MOVE received");
     }
 
     private void leave(UserGameCommand command) {
-        // TODO
+        System.out.println("LEAVE received");
     }
 
     private void resign(UserGameCommand command) {
-        // TODO
+        System.out.println("RESIGN received");
     }
 }
