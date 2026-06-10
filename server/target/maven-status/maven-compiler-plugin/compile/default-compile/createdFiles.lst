@@ -1,5 +1,6 @@
 dataaccess/MySqlDataAccess.class
 server/Server.class
+websocket/WebSocketHandler$1.class
 dataaccess/DataAccess.class
 server/ServerFacade.class
 service/request/LoginRequest.class
