@@ -9,16 +9,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * Used indirectly to help test the <pre>equals()</pre> and
- * <pre>hashCode()</pre> methods of other classes.
- * <br>
- * This class requires that implementing classes provide a few builder methods,
- * and then it automatically adds multiple tests to the evaluation suite
- * which assert that the <pre>equals()</pre> and <pre>hashCode()</pre> methods function.
- *
- * @param <T> The type to be compared during testing.
- */
 public abstract class EqualsTestingUtility<T> {
     private final String className;
     private final String itemsPlural;
@@ -81,7 +71,7 @@ public abstract class EqualsTestingUtility<T> {
         Assertions.assertEquals(1, set.size(),
                 "[" + className + "] Collection should still contain only 1 item after adding equivalent item");
 
-        // Programmatically test insertion of all different items
+        // Programmatically test insertion of all the different items
         int expectedSetSize = 1;
         for (var different : allDifferent) {
             Assertions.assertFalse(set.contains(different),
