@@ -22,16 +22,30 @@ public class ConnectionManager {
         }
     }
 
-    public void broadcast(int gameID, String message) throws Exception {
+    public void send(Session session, String message) throws Exception {
+        if (session != null && session.isOpen()) {
+            session.getRemote().sendString(message);
+        }
+    }
 
+    public void broadcast(int gameID, String message) throws Exception {
         if (!connections.containsKey(gameID)) {
             return;
         }
 
         for (Session session : connections.get(gameID)) {
+            send(session, message);
+        }
+    }
 
-            if (session.isOpen()) {
-                session.getRemote().sendString(message);
+    public void broadcastExcept(int gameID, Session excludedSession, String message) throws Exception {
+        if (!connections.containsKey(gameID)) {
+            return;
+        }
+
+        for (Session session : connections.get(gameID)) {
+            if (!session.equals(excludedSession)) {
+                send(session, message);
             }
         }
     }
