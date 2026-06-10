@@ -1,10 +1,17 @@
 package ui;
 
+import websocket.WebSocketFacade;
+
 import java.util.Scanner;
 
 public class GameplayRepl {
 
     private final Scanner scanner = new Scanner(System.in);
+    private final WebSocketFacade webSocketFacade;
+
+    public GameplayRepl(WebSocketFacade webSocketFacade) {
+        this.webSocketFacade = webSocketFacade;
+    }
 
     public void run() {
         System.out.println("Gameplay Started");
@@ -46,22 +53,41 @@ public class GameplayRepl {
     }
 
     private void redraw() {
-        // TODO: call BoardDrawer
+        System.out.println("TODO: redraw board");
     }
 
     private void makeMove(String[] parts) {
-        // TODO: parse move and send MAKE_MOVE websocket command
+        if (parts.length != 3) {
+            System.out.println("Usage: move <start> <end>");
+            return;
+        }
+
+        System.out.println("TODO: make move from " + parts[1] + " to " + parts[2]);
     }
 
     private void highlight(String[] parts) {
-        // TODO: highlight legal moves locally
+        if (parts.length != 2) {
+            System.out.println("Usage: highlight <square>");
+            return;
+        }
+
+        System.out.println("TODO: highlight moves for " + parts[1]);
     }
 
     private void resign() {
-        // TODO: confirm and send RESIGN websocket command
+        System.out.print("Are you sure you want to resign? yes/no: ");
+        String answer = scanner.nextLine().trim().toLowerCase();
+
+        if (answer.equals("yes")) {
+            webSocketFacade.resign();
+            System.out.println("Resign command sent.");
+        } else {
+            System.out.println("Resign cancelled.");
+        }
     }
 
     private void leave() {
-        // TODO: send LEAVE websocket command
+        webSocketFacade.leave();
+        System.out.println("Leaving game.");
     }
 }

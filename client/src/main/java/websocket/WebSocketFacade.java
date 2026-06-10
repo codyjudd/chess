@@ -1,33 +1,62 @@
 package websocket;
 
+import chess.ChessMove;
 import com.google.gson.Gson;
+import websocket.commands.MakeMoveCommand;
+import websocket.commands.UserGameCommand;
 
 public class WebSocketFacade {
 
     private final ServerMessageObserver observer;
     private final Gson gson = new Gson();
 
+    private String authToken;
+    private Integer gameID;
+
     public WebSocketFacade(ServerMessageObserver observer) {
         this.observer = observer;
     }
 
-    public void connect(int gameID) {
-        // TODO
+    public void connect(String authToken, Integer gameID) {
+        this.authToken = authToken;
+        this.gameID = gameID;
+
+        UserGameCommand command = new UserGameCommand(
+                UserGameCommand.CommandType.CONNECT,
+                authToken,
+                gameID
+        );
+
+        send(gson.toJson(command));
     }
 
-    public void makeMove() {
-        // TODO
+    public void makeMove(ChessMove move) {
+        MakeMoveCommand command = new MakeMoveCommand(authToken, gameID, move);
+        send(gson.toJson(command));
     }
 
     public void leave() {
-        // TODO
+        UserGameCommand command = new UserGameCommand(
+                UserGameCommand.CommandType.LEAVE,
+                authToken,
+                gameID
+        );
+
+        send(gson.toJson(command));
     }
 
     public void resign() {
-        // TODO
+        UserGameCommand command = new UserGameCommand(
+                UserGameCommand.CommandType.RESIGN,
+                authToken,
+                gameID
+        );
+
+        send(gson.toJson(command));
     }
 
     private void send(String json) {
-        // TODO
+        // TODO: actually send this JSON over the WebSocket session
+        System.out.println("Sending websocket message: " + json);
     }
 }
