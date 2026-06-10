@@ -55,8 +55,11 @@ public class WebSocketFacade {
         send(gson.toJson(command));
     }
 
+    public void receive(String message) {
+        observer.notify(message);
+    }
+
     private void send(String json) {
-        // TODO: actually send this JSON over the WebSocket session
-        System.out.println("Sending websocket message: " + json);
+        System.out.println("TODO send websocket message: " + json);
     }
 }

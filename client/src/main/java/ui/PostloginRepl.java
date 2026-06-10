@@ -3,10 +3,7 @@ package ui;
 import java.util.Arrays;
 import java.util.Scanner;
 
-/**
- * Read-Eval-Print loop for the post-login state.
- * Place at: server/src/main/java/ui/PostloginRepl.java
- */
+
 public class PostloginRepl {
 
     private final ChessClient client;
