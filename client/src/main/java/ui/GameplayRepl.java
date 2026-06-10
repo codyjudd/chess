@@ -1,5 +1,7 @@
 package ui;
 
+import chess.ChessMove;
+import chess.ChessPosition;
 import websocket.WebSocketFacade;
 
 import java.util.Scanner;
@@ -62,7 +64,16 @@ public class GameplayRepl {
             return;
         }
 
-        System.out.println("TODO: make move from " + parts[1] + " to " + parts[2]);
+        ChessPosition start = parsePosition(parts[1]);
+        ChessPosition end = parsePosition(parts[2]);
+
+        if (start == null || end == null) {
+            System.out.println("Invalid square. Use format like e2 or e4.");
+            return;
+        }
+
+        ChessMove move = new ChessMove(start, end, null);
+        webSocketFacade.makeMove(move);
     }
 
     private void highlight(String[] parts) {
@@ -71,7 +82,36 @@ public class GameplayRepl {
             return;
         }
 
+        ChessPosition position = parsePosition(parts[1]);
+
+        if (position == null) {
+            System.out.println("Invalid square. Use format like e2.");
+            return;
+        }
+
         System.out.println("TODO: highlight moves for " + parts[1]);
+    }
+
+    private ChessPosition parsePosition(String input) {
+        if (input == null || input.length() != 2) {
+            return null;
+        }
+
+        char colChar = Character.toLowerCase(input.charAt(0));
+        char rowChar = input.charAt(1);
+
+        if (colChar < 'a' || colChar > 'h') {
+            return null;
+        }
+
+        if (rowChar < '1' || rowChar > '8') {
+            return null;
+        }
+
+        int col = colChar - 'a' + 1;
+        int row = rowChar - '1' + 1;
+
+        return new ChessPosition(row, col);
     }
 
     private void resign() {
