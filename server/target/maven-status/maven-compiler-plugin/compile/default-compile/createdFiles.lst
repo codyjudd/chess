@@ -14,6 +14,7 @@ service/result/ListGameEntry.class
 service/ClearService.class
 exception/ResponseException.class
 websocket/ConnectionManager.class
+websocket/WebSocketEndpoint.class
 dataaccess/DataAccessException.class
 dataaccess/MemoryDataAccess.class
 service/result/CreateGameResult.class
