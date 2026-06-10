@@ -2,8 +2,10 @@ package websocket;
 
 import chess.ChessMove;
 import com.google.gson.Gson;
+import websocket.commands.ConnectCommand;
+import websocket.commands.LeaveCommand;
 import websocket.commands.MakeMoveCommand;
-import websocket.commands.UserGameCommand;
+import websocket.commands.ResignCommand;
 
 public class WebSocketFacade {
 
@@ -20,39 +22,19 @@ public class WebSocketFacade {
     public void connect(String authToken, Integer gameID) {
         this.authToken = authToken;
         this.gameID = gameID;
-
-        UserGameCommand command = new UserGameCommand(
-                UserGameCommand.CommandType.CONNECT,
-                authToken,
-                gameID
-        );
-
-        send(gson.toJson(command));
+        send(gson.toJson(new ConnectCommand(authToken, gameID)));
     }
 
     public void makeMove(ChessMove move) {
-        MakeMoveCommand command = new MakeMoveCommand(authToken, gameID, move);
-        send(gson.toJson(command));
+        send(gson.toJson(new MakeMoveCommand(authToken, gameID, move)));
     }
 
     public void leave() {
-        UserGameCommand command = new UserGameCommand(
-                UserGameCommand.CommandType.LEAVE,
-                authToken,
-                gameID
-        );
-
-        send(gson.toJson(command));
+        send(gson.toJson(new LeaveCommand(authToken, gameID)));
     }
 
     public void resign() {
-        UserGameCommand command = new UserGameCommand(
-                UserGameCommand.CommandType.RESIGN,
-                authToken,
-                gameID
-        );
-
-        send(gson.toJson(command));
+        send(gson.toJson(new ResignCommand(authToken, gameID)));
     }
 
     public void receive(String message) {
