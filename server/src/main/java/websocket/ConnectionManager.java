@@ -49,4 +49,12 @@ public class ConnectionManager {
             }
         }
     }
+
+    public int getConnectionCount(int gameID) {
+        if (!connections.containsKey(gameID)) {
+            return 0;
+        }
+
+        return connections.get(gameID).size();
+    }
 }
