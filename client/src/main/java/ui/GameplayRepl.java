@@ -45,7 +45,7 @@ public class GameplayRepl {
                 case "redraw"    -> redraw();
                 case "move"      -> makeMove(parts);
                 case "highlight" -> highlight(parts);
-                case "resign"    -> resign();
+                case "resign"    -> resign(line);
                 case "leave"     -> { leave(); return; }
                 default          -> System.out.println("Unknown command. Type 'help'.");
             }
@@ -119,16 +119,22 @@ public class GameplayRepl {
         }
     }
 
-    private void resign() {
-        System.out.print("Are you sure you want to resign? (yes/no): ");
-        String answer;
-        try {
-            answer = scanner.nextLine().trim().toLowerCase();
-        } catch (Exception e) {
-            return;
+    private void resign(String fullLine) {
+        // If they typed "resign yes" skip the prompt
+        String[] parts = fullLine.split("\\s+");
+        String confirmation;
+        if (parts.length >= 2 && parts[1].equalsIgnoreCase("yes")) {
+            confirmation = "yes";
+        } else {
+            System.out.print("Are you sure you want to resign? (yes/no): ");
+            try {
+                confirmation = scanner.nextLine().trim().toLowerCase();
+            } catch (Exception e) {
+                return;
+            }
         }
 
-        if (answer.equals("yes")) {
+        if (confirmation.equals("yes")) {
             webSocketFacade.resign();
         } else {
             System.out.println("Resign cancelled.");
