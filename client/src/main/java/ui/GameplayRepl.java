@@ -33,7 +33,9 @@ public class GameplayRepl {
                 break;
             }
 
-            if (line.isBlank()) continue;
+            if (line.isBlank()) {
+                continue;
+            }
 
             String[] parts = line.split("\\s+");
             String command = parts[0].toLowerCase();
@@ -140,11 +142,17 @@ public class GameplayRepl {
     }
 
     private ChessPosition parsePosition(String input) {
-        if (input == null || input.length() != 2) return null;
+        if (input == null || input.length() != 2) {
+            return null;
+        }
         char colChar = Character.toLowerCase(input.charAt(0));
         char rowChar = input.charAt(1);
-        if (colChar < 'a' || colChar > 'h') return null;
-        if (rowChar < '1' || rowChar > '8') return null;
+        if (colChar < 'a' || colChar > 'h') {
+            return null;
+        }
+        if (rowChar < '1' || rowChar > '8') {
+            return null;
+        }
         return new ChessPosition(rowChar - '1' + 1, colChar - 'a' + 1);
     }
 

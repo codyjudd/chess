@@ -29,11 +29,16 @@ public class ChessClient {
     }
 
     public String currentUsername() {
-        return currentUser != null ? currentUser.username() : null;
+        if (currentUser != null) {
+            return currentUser.username();
+        }
+        return null;
     }
 
     public String register(String[] args) {
-        if (args.length != 3) return "Usage: register <username> <password> <email>";
+        if (args.length != 3) {
+            return "Usage: register <username> <password> <email>";
+        }
         try {
             currentUser = facade.register(args[0], args[1], args[2]);
             return "Registered and logged in as " + currentUser.username() + ".";
@@ -43,7 +48,9 @@ public class ChessClient {
     }
 
     public String login(String[] args) {
-        if (args.length != 2) return "Usage: login <username> <password>";
+        if (args.length != 2) {
+            return "Usage: login <username> <password>";
+        }
         try {
             currentUser = facade.login(args[0], args[1]);
             return "Logged in as " + currentUser.username() + ".";
@@ -65,7 +72,9 @@ public class ChessClient {
     }
 
     public String createGame(String[] args) {
-        if (args.length < 1) return "Usage: create <game name>";
+        if (args.length < 1) {
+            return "Usage: create <game name>";
+        }
         String gameName = String.join(" ", args);
         try {
             facade.createGame(currentUser.authToken(), gameName);
@@ -99,10 +108,14 @@ public class ChessClient {
     }
 
     public String playGame(String[] args) {
-        if (args.length != 2) return "Usage: play <game number> <WHITE|BLACK>";
+        if (args.length != 2) {
+            return "Usage: play <game number> <WHITE|BLACK>";
+        }
 
         int index = parseGameIndex(args[0]);
-        if (index < 0) return "Invalid game number. Run 'list' to see available games.";
+        if (index < 0) {
+            return "Invalid game number. Run 'list' to see available games.";
+        }
 
         String colorArg = args[1].toUpperCase();
         if (!colorArg.equals("WHITE") && !colorArg.equals("BLACK")) {
@@ -126,10 +139,14 @@ public class ChessClient {
     }
 
     public String observeGame(String[] args) {
-        if (args.length != 1) return "Usage: observe <game number>";
+        if (args.length != 1) {
+            return "Usage: observe <game number>";
+        }
 
         int index = parseGameIndex(args[0]);
-        if (index < 0) return "Invalid game number. Run 'list' to see available games.";
+        if (index < 0) {
+            return "Invalid game number. Run 'list' to see available games.";
+        }
 
         GameData game = lastGameList.get(index);
         System.out.println("Observing \"" + game.gameName() + "\".");
@@ -157,7 +174,9 @@ public class ChessClient {
     private int parseGameIndex(String s) {
         try {
             int n = Integer.parseInt(s);
-            if (n < 1 || n > lastGameList.size()) return -1;
+            if (n < 1 || n > lastGameList.size()) {
+                return -1;
+            }
             return n - 1;
         } catch (NumberFormatException e) {
             return -1;

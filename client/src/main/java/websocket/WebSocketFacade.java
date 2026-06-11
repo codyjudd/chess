@@ -37,11 +37,6 @@ public class WebSocketFacade {
         observer.notify(message);
     }
 
-    @OnError
-    public void onError(Session session, Throwable t) {
-        System.out.println("WebSocket error: " + t.getMessage());
-    }
-
     @OnClose
     public void onClose(Session session, CloseReason reason) {
         this.session = null;
