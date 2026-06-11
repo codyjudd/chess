@@ -9,12 +9,15 @@ import websocket.commands.ResignCommand;
 
 import jakarta.websocket.*;
 import java.net.URI;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 @ClientEndpoint
 public class WebSocketFacade {
 
     private final ServerMessageObserver observer;
     private final Gson gson = new Gson();
+    private final CountDownLatch openLatch = new CountDownLatch(1);
 
     private Session session;
     private String authToken;
@@ -25,11 +28,17 @@ public class WebSocketFacade {
         String wsUrl = serverUrl.replace("http", "ws") + "/ws";
         WebSocketContainer container = ContainerProvider.getWebSocketContainer();
         container.connectToServer(this, new URI(wsUrl));
+
+        // Wait up to 5 seconds for the connection to open
+        if (!openLatch.await(5, TimeUnit.SECONDS)) {
+            throw new Exception("Timed out waiting for WebSocket connection.");
+        }
     }
 
     @OnOpen
     public void onOpen(Session session) {
         this.session = session;
+        openLatch.countDown();
     }
 
     @OnMessage
