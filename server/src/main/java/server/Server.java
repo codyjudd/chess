@@ -45,7 +45,7 @@ public class Server {
 
         gameService = new GameService(dataAccess);
 
-        webSocketHandler = new WebSocketHandler();
+        webSocketHandler = new WebSocketHandler(dataAccess);
 
         javalin = Javalin.create(config -> config.staticFiles.add("web"));
 

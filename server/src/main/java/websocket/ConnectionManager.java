@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Set;
 
 public class ConnectionManager {
-
     private final Map<Integer, Set<Session>> connections = new HashMap<>();
 
     public void add(int gameID, Session session) {
@@ -19,6 +18,12 @@ public class ConnectionManager {
     public void remove(int gameID, Session session) {
         if (connections.containsKey(gameID)) {
             connections.get(gameID).remove(session);
+        }
+    }
+
+    public void removeFromAll(Session session) {
+        for (Set<Session> sessions : connections.values()) {
+            sessions.remove(session);
         }
     }
 
@@ -33,7 +38,7 @@ public class ConnectionManager {
             return;
         }
 
-        for (Session session : connections.get(gameID)) {
+        for (Session session : new HashSet<>(connections.get(gameID))) {
             send(session, message);
         }
     }
@@ -43,18 +48,10 @@ public class ConnectionManager {
             return;
         }
 
-        for (Session session : connections.get(gameID)) {
+        for (Session session : new HashSet<>(connections.get(gameID))) {
             if (!session.equals(excludedSession)) {
                 send(session, message);
             }
         }
-    }
-
-    public int getConnectionCount(int gameID) {
-        if (!connections.containsKey(gameID)) {
-            return 0;
-        }
-
-        return connections.get(gameID).size();
     }
 }
