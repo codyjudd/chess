@@ -1,36 +1,39 @@
 package ui;
 
-import chess.ChessBoard;
 import chess.ChessGame;
 import exception.ResponseException;
 import model.AuthData;
 import model.GameData;
 import server.ServerFacade;
+import websocket.NotificationHandler;
+import websocket.WebSocketFacade;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-
 public class ChessClient {
 
     private final ServerFacade facade;
+    private final int port;
     private AuthData currentUser = null;
     private List<GameData> lastGameList = new ArrayList<>();
+
     public ChessClient(int port) {
+        this.port = port;
         this.facade = new ServerFacade(port);
     }
+
     public boolean isLoggedIn() {
         return currentUser != null;
     }
+
     public String currentUsername() {
         return currentUser != null ? currentUser.username() : null;
     }
 
-
     public String register(String[] args) {
-        if (args.length != 3) {
-            return "Usage: register <username> <password> <email>";
-        }
+        if (args.length != 3) return "Usage: register <username> <password> <email>";
         try {
             currentUser = facade.register(args[0], args[1], args[2]);
             return "Registered and logged in as " + currentUser.username() + ".";
@@ -40,9 +43,7 @@ public class ChessClient {
     }
 
     public String login(String[] args) {
-        if (args.length != 2) {
-            return "Usage: login <username> <password>";
-        }
+        if (args.length != 2) return "Usage: login <username> <password>";
         try {
             currentUser = facade.login(args[0], args[1]);
             return "Logged in as " + currentUser.username() + ".";
@@ -50,7 +51,7 @@ public class ChessClient {
             return "Login failed: " + e.getMessage();
         }
     }
-    // Some Post login commands
+
     public String logout() {
         try {
             facade.logout(currentUser.authToken());
@@ -64,9 +65,7 @@ public class ChessClient {
     }
 
     public String createGame(String[] args) {
-        if (args.length < 1) {
-            return "Usage: create <game name>";
-        }
+        if (args.length < 1) return "Usage: create <game name>";
         String gameName = String.join(" ", args);
         try {
             facade.createGame(currentUser.authToken(), gameName);
@@ -100,13 +99,11 @@ public class ChessClient {
     }
 
     public String playGame(String[] args) {
-        if (args.length != 2) {
-            return "Usage: play <game number> <WHITE|BLACK>";
-        }
+        if (args.length != 2) return "Usage: play <game number> <WHITE|BLACK>";
+
         int index = parseGameIndex(args[0]);
-        if (index < 0) {
-            return "Invalid game number. Run 'list' to see available games.";
-        }
+        if (index < 0) return "Invalid game number. Run 'list' to see available games.";
+
         String colorArg = args[1].toUpperCase();
         if (!colorArg.equals("WHITE") && !colorArg.equals("BLACK")) {
             return "Color must be WHITE or BLACK.";
@@ -116,45 +113,51 @@ public class ChessClient {
         try {
             facade.joinGame(currentUser.authToken(), colorArg, game.gameID());
             System.out.println("Joined \"" + game.gameName() + "\" as " + colorArg + ".");
-
-            ChessBoard board = new ChessBoard();
-            board.resetBoard();
-            if (colorArg.equals("BLACK")) {
-                BoardDrawer.drawBlack(board); // wil do later :)
-            } else {
-                BoardDrawer.drawWhite(board); // will do later.
-            }
-            return "";
         } catch (ResponseException e) {
             return "Could not join game: " + e.getMessage();
         }
+
+        ChessGame.TeamColor color = colorArg.equals("WHITE")
+                ? ChessGame.TeamColor.WHITE
+                : ChessGame.TeamColor.BLACK;
+
+        startGameplay(game.gameID(), color);
+        return "";
     }
 
     public String observeGame(String[] args) {
-        if (args.length != 1) {
-            return "Usage: observe <game number>";
-        }
+        if (args.length != 1) return "Usage: observe <game number>";
+
         int index = parseGameIndex(args[0]);
-        if (index < 0) {
-            return "Invalid game number. Run 'list' to see available games.";
-        }
+        if (index < 0) return "Invalid game number. Run 'list' to see available games.";
 
         GameData game = lastGameList.get(index);
         System.out.println("Observing \"" + game.gameName() + "\".");
 
-        ChessBoard board = new ChessBoard();
-        board.resetBoard();
-        BoardDrawer.drawWhite(board); // will do this later
+        startGameplay(game.gameID(), null);
         return "";
     }
 
+    private void startGameplay(int gameID, ChessGame.TeamColor playerColor) {
+        try {
+            String serverUrl = "http://localhost:" + port;
+            NotificationHandler handler = new NotificationHandler();
+            handler.setPlayerColor(playerColor);
+
+            WebSocketFacade ws = new WebSocketFacade(serverUrl, handler);
+            ws.connect(currentUser.authToken(), gameID);
+
+            GameplayRepl gameplay = new GameplayRepl(ws, handler, playerColor);
+            gameplay.run();
+        } catch (Exception e) {
+            System.out.println("Error connecting to game: " + e.getMessage());
+        }
+    }
 
     private int parseGameIndex(String s) {
         try {
             int n = Integer.parseInt(s);
-            if (n < 1 || n > lastGameList.size()) {
-                return -1;
-            }
+            if (n < 1 || n > lastGameList.size()) return -1;
             return n - 1;
         } catch (NumberFormatException e) {
             return -1;

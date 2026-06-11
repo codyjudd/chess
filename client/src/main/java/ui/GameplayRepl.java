@@ -1,79 +1,93 @@
 package ui;
 
-import chess.ChessMove;
-import chess.ChessPosition;
+import chess.*;
+import websocket.NotificationHandler;
 import websocket.WebSocketFacade;
 
+import java.util.Collection;
 import java.util.Scanner;
 
 public class GameplayRepl {
 
     private final Scanner scanner = new Scanner(System.in);
     private final WebSocketFacade webSocketFacade;
+    private final NotificationHandler handler;
+    private final ChessGame.TeamColor playerColor;
 
-    public GameplayRepl(WebSocketFacade webSocketFacade) {
+    public GameplayRepl(WebSocketFacade webSocketFacade, NotificationHandler handler,
+                        ChessGame.TeamColor playerColor) {
         this.webSocketFacade = webSocketFacade;
+        this.handler = handler;
+        this.playerColor = playerColor;
     }
 
     public void run() {
-        System.out.println("Gameplay Started");
-        help();
+        System.out.println("Gameplay started. Type 'help' for commands.");
 
         while (true) {
             System.out.print("[game] >>> ");
-            String line = scanner.nextLine().trim();
-
-            if (line.isBlank()) {
-                continue;
+            String line;
+            try {
+                line = scanner.nextLine().trim();
+            } catch (Exception e) {
+                break;
             }
+
+            if (line.isBlank()) continue;
 
             String[] parts = line.split("\\s+");
             String command = parts[0].toLowerCase();
 
             switch (command) {
-                case "help" -> help();
-                case "redraw" -> redraw();
-                case "move" -> makeMove(parts);
+                case "help"      -> help();
+                case "redraw"    -> redraw();
+                case "move"      -> makeMove(parts);
                 case "highlight" -> highlight(parts);
-                case "resign" -> resign();
-                case "leave" -> {
-                    leave();
-                    return;
-                }
-                default -> System.out.println("Unknown command. Type help.");
+                case "resign"    -> resign();
+                case "leave"     -> { leave(); return; }
+                default          -> System.out.println("Unknown command. Type 'help'.");
             }
         }
     }
 
     private void help() {
-        System.out.println("help - show commands");
-        System.out.println("redraw - redraw chess board");
-        System.out.println("move <start> <end> - example: move e2 e4");
-        System.out.println("highlight <square> - example: highlight e2");
-        System.out.println("resign - resign from the game");
-        System.out.println("leave - leave the game");
+        System.out.println("  help                           - show this help text");
+        System.out.println("  redraw                         - redraw the chess board");
+        System.out.println("  move <start> <end> [promo]     - make a move, e.g. 'move e2 e4'");
+        System.out.println("                                   optional promotion piece: q r b n");
+        System.out.println("  highlight <square>             - show legal moves, e.g. 'highlight e2'");
+        System.out.println("  resign                         - forfeit the game");
+        System.out.println("  leave                          - leave the game (returns to lobby)");
     }
 
     private void redraw() {
-        System.out.println("TODO: redraw board");
+        handler.drawCurrentBoard();
     }
 
     private void makeMove(String[] parts) {
-        if (parts.length != 3) {
-            System.out.println("Usage: move <start> <end>");
+        if (parts.length < 3) {
+            System.out.println("Usage: move <start> <end> [promotion: q r b n]");
             return;
         }
 
         ChessPosition start = parsePosition(parts[1]);
-        ChessPosition end = parsePosition(parts[2]);
+        ChessPosition end   = parsePosition(parts[2]);
 
         if (start == null || end == null) {
             System.out.println("Invalid square. Use format like e2 or e4.");
             return;
         }
 
-        ChessMove move = new ChessMove(start, end, null);
-        webSocketFacade.makeMove(move);
+        ChessPiece.PieceType promotion = null;
+        if (parts.length >= 4) {
+            promotion = parsePromotion(parts[3]);
+            if (promotion == null) {
+                System.out.println("Invalid promotion piece. Use q, r, b, or n.");
+                return;
+            }
+        }
+
+        webSocketFacade.makeMove(new ChessMove(start, end, promotion));
     }
 
     private void highlight(String[] parts) {
@@ -82,45 +96,38 @@ public class GameplayRepl {
             return;
         }
 
-        ChessPosition position = parsePosition(parts[1]);
-
-        if (position == null) {
+        ChessPosition pos = parsePosition(parts[1]);
+        if (pos == null) {
             System.out.println("Invalid square. Use format like e2.");
             return;
         }
 
-        System.out.println("TODO: highlight moves for " + parts[1]);
-    }
-
-    private ChessPosition parsePosition(String input) {
-        if (input == null || input.length() != 2) {
-            return null;
+        ChessGame game = handler.getCurrentGame();
+        if (game == null) {
+            System.out.println("No game loaded.");
+            return;
         }
 
-        char colChar = Character.toLowerCase(input.charAt(0));
-        char rowChar = input.charAt(1);
+        Collection<ChessMove> moves = game.validMoves(pos);
 
-        if (colChar < 'a' || colChar > 'h') {
-            return null;
+        if (playerColor == ChessGame.TeamColor.BLACK) {
+            BoardDrawer.drawBlackHighlight(game.getBoard(), pos, moves);
+        } else {
+            BoardDrawer.drawWhiteHighlight(game.getBoard(), pos, moves);
         }
-
-        if (rowChar < '1' || rowChar > '8') {
-            return null;
-        }
-
-        int col = colChar - 'a' + 1;
-        int row = rowChar - '1' + 1;
-
-        return new ChessPosition(row, col);
     }
 
     private void resign() {
-        System.out.print("Are you sure you want to resign? yes/no: ");
-        String answer = scanner.nextLine().trim().toLowerCase();
+        System.out.print("Are you sure you want to resign? (yes/no): ");
+        String answer;
+        try {
+            answer = scanner.nextLine().trim().toLowerCase();
+        } catch (Exception e) {
+            return;
+        }
 
         if (answer.equals("yes")) {
             webSocketFacade.resign();
-            System.out.println("Resign command sent.");
         } else {
             System.out.println("Resign cancelled.");
         }
@@ -129,5 +136,25 @@ public class GameplayRepl {
     private void leave() {
         webSocketFacade.leave();
         System.out.println("Leaving game.");
+        webSocketFacade.close();
+    }
+
+    private ChessPosition parsePosition(String input) {
+        if (input == null || input.length() != 2) return null;
+        char colChar = Character.toLowerCase(input.charAt(0));
+        char rowChar = input.charAt(1);
+        if (colChar < 'a' || colChar > 'h') return null;
+        if (rowChar < '1' || rowChar > '8') return null;
+        return new ChessPosition(rowChar - '1' + 1, colChar - 'a' + 1);
+    }
+
+    private ChessPiece.PieceType parsePromotion(String s) {
+        return switch (s.toLowerCase()) {
+            case "q" -> ChessPiece.PieceType.QUEEN;
+            case "r" -> ChessPiece.PieceType.ROOK;
+            case "b" -> ChessPiece.PieceType.BISHOP;
+            case "n" -> ChessPiece.PieceType.KNIGHT;
+            default  -> null;
+        };
     }
 }

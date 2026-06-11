@@ -14,7 +14,7 @@ public class WebSocketEndpoint {
 
     @OnWebSocketConnect
     public void onConnect(Session session) {
-        System.out.println("WebSocket connected");
+        System.out.println("WebSocket connected: " + session.getRemoteAddress());
     }
 
     @OnWebSocketMessage
@@ -24,7 +24,8 @@ public class WebSocketEndpoint {
 
     @OnWebSocketClose
     public void onClose(Session session, int statusCode, String reason) {
-        System.out.println("WebSocket closed");
+        System.out.println("WebSocket closed: " + reason);
+        handler.onClose(session);
     }
 
     @OnWebSocketError

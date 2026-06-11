@@ -89,7 +89,7 @@ public class Server {
 
             ws.onMessage(ctx -> webSocketHandler.onMessage(ctx.session, ctx.message()));
 
-            ws.onClose(ctx -> System.out.println("WebSocket closed"));
+            ws.onClose(ctx -> webSocketHandler.onClose(ctx.session));
 
         });
 
