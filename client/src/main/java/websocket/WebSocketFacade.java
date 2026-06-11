@@ -10,6 +10,8 @@ import websocket.commands.ResignCommand;
 import jakarta.websocket.*;
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 @ClientEndpoint
@@ -18,6 +20,7 @@ public class WebSocketFacade {
     private final ServerMessageObserver observer;
     private final Gson gson = new Gson();
     private final CountDownLatch openLatch = new CountDownLatch(1);
+    private final ScheduledExecutorService pingExecutor = Executors.newSingleThreadScheduledExecutor();
 
     private Session session;
     private String authToken;
@@ -27,9 +30,9 @@ public class WebSocketFacade {
         this.observer = observer;
         String wsUrl = serverUrl.replace("http", "ws") + "/ws";
         WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+        container.setDefaultMaxSessionIdleTimeout(0);
         container.connectToServer(this, new URI(wsUrl));
 
-        // Wait up to 5 seconds for the connection to open
         if (!openLatch.await(5, TimeUnit.SECONDS)) {
             throw new Exception("Timed out waiting for WebSocket connection.");
         }
@@ -38,7 +41,17 @@ public class WebSocketFacade {
     @OnOpen
     public void onOpen(Session session) {
         this.session = session;
+        session.setMaxIdleTimeout(0);
         openLatch.countDown();
+
+        // Send a ping every 20 seconds to keep the connection alive
+        pingExecutor.scheduleAtFixedRate(() -> {
+            try {
+                if (session != null && session.isOpen()) {
+                    session.getBasicRemote().sendPing(null);
+                }
+            } catch (Exception ignored) {}
+        }, 20, 20, TimeUnit.SECONDS);
     }
 
     @OnMessage
@@ -49,6 +62,7 @@ public class WebSocketFacade {
     @OnClose
     public void onClose(Session session, CloseReason reason) {
         this.session = null;
+        pingExecutor.shutdownNow();
     }
 
     public void connect(String authToken, Integer gameID) {
@@ -70,6 +84,7 @@ public class WebSocketFacade {
     }
 
     public void close() {
+        pingExecutor.shutdownNow();
         try {
             if (session != null && session.isOpen()) {
                 session.close();
